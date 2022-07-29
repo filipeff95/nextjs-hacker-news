@@ -1,10 +1,36 @@
-import type { NextPage } from 'next'
+import type { GetServerSideProps, NextPage } from 'next'
 import Head from 'next/head'
+import { useEffect, useState } from 'react'
+import Button from '../components/Button'
 import Card from '../components/Card'
+import { getStories, getStory, getStoryIds, Story } from '../helpers/hnAPI'
 
 import css from '../styles/Home.module.css'
 
-const Home: NextPage = () => {
+interface Props {
+  ids?: number[]
+  initialStories?: Story[]
+}
+
+const PAGE_SIZE = 30
+
+const Home: NextPage<Props> = ({ ids, initialStories }) => {
+  const [currentResults, setCurrentResults] = useState(PAGE_SIZE)
+  const [stories, setStories] = useState<Story[] | undefined>(initialStories)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (currentResults > PAGE_SIZE && ids && stories) {
+      setLoading(true)
+      getStories(ids.slice(currentResults - PAGE_SIZE, currentResults)).then(
+        (data) => {
+          setStories([...stories, ...(data as Story[])])
+          setLoading(false)
+        }
+      )
+    }
+  }, [currentResults])
+
   return (
     <div className={css.host}>
       <Head>
@@ -15,30 +41,32 @@ const Home: NextPage = () => {
 
       <h1 className={css.title}>NextJS Hacker news</h1>
       <main className={css.main}>
-        <Card
-          by="theafh"
-          score={773}
-          time={1658759093}
-          title="Two weeks in, the Webb Space Telescope is reshaping astronomy"
-          url="https://www.quantamagazine.org/two-weeks-in-the-webb-space-telescope-is-reshaping-astronomy-20220725/"
-        />
-        <Card
-          by="theafh"
-          score={773}
-          time={1658759093}
-          title="Two weeks in, the Webb Space Telescope is reshaping astronomy"
-          url="https://www.quantamagazine.org/two-weeks-in-the-webb-space-telescope-is-reshaping-astronomy-20220725/"
-        />
-        <Card
-          by="theafh"
-          score={773}
-          time={1658759093}
-          title="Two weeks in, the Webb Space Telescope is reshaping astronomy"
-          url="https://www.quantamagazine.org/two-weeks-in-the-webb-space-telescope-is-reshaping-astronomy-20220725/"
-        />
+        {stories &&
+          stories.map((story) => <Card key={story.id} story={story} />)}
       </main>
+
+      <Button
+        onClick={() => setCurrentResults(currentResults + PAGE_SIZE)}
+        label="Show More"
+        loading={loading}
+      />
     </div>
   )
+}
+
+export const getServerSideProps: GetServerSideProps<Props> = async () => {
+  let ids: number[] | undefined
+  let stories: Story[] | undefined = []
+
+  await getStoryIds().then((data) => (ids = data))
+
+  if (ids) {
+    await getStories(ids.slice(0, PAGE_SIZE)).then((data) => (stories = data))
+  }
+
+  return {
+    props: { ids: ids, initialStories: stories },
+  }
 }
 
 export default Home

@@ -13,6 +13,6 @@
   color: var(--titles);
 }
 
-.main > :not(:last-child) {
+.main > * {
   margin-bottom: 16px;
 }

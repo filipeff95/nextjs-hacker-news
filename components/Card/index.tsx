@@ -1,16 +1,15 @@
 import { FC } from 'react'
+import { Story } from '../../helpers/hnAPI'
 import css from './card.module.css'
 
 interface Props {
-  by: string
-  score: number
-  time: number
-  title: string
-  url: string
+  story: Story
 }
 
-const Card: FC<Props> = ({ by, score, time, title, url }) => {
-  const domain = new URL(url)
+const Card: FC<Props> = ({ story }) => {
+  const { by, url, title, time, score } = story
+
+  const domain = url ? new URL(url) : ''
 
   return (
     <div className={css.host}>
@@ -19,9 +18,11 @@ const Card: FC<Props> = ({ by, score, time, title, url }) => {
           {title}
         </a>
 
-        <span className={css.supportText}>
-          ({domain.hostname.replace('www.', '')})
-        </span>
+        {domain && (
+          <span className={css.supportText}>
+            ({domain.hostname.replace('www.', '')})
+          </span>
+        )}
       </div>
 
       <span className={css.supportText}>
